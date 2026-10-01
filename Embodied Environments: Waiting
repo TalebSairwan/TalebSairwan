@@ -1,0 +1,77 @@
+/*
+Pin A1 : Sensor 1
+Pin A2 : Sensor 2
+Pin 12 : Light 1 (Pulsing)
+Pin 13 : Light 2 (Pulsing)
+Pin 14 : Light 3 (Heart)
+*/
+
+const int sensor1Pin = A1;
+int sensor1Value;
+
+const int sensor2Pin = A2;
+int sensor2Value;
+
+const int PRESS_THRESHOLD = 1500; // after testing this is the optimal value 
+
+// LED Pins
+const int led1Pin = 12; 
+const int led2Pin = 13;
+const int led3Pin = 14; // Heart Light
+
+void setup()
+{
+  Serial.begin(9600);
+  
+  pinMode(led1Pin, OUTPUT);
+  pinMode(led2Pin, OUTPUT);
+  pinMode(led3Pin, OUTPUT);
+}
+
+void loop() // so everything can always repeat i picked a loop
+{
+  sensor1Value = analogRead(sensor1Pin);
+  sensor2Value = analogRead(sensor2Pin);
+  
+//since I want the sensors to act as on and off. 
+//I used a bool and set the true to bee the threshold that means it will be false
+// until the pressure on the sesnor reaches 1500 then it will be true
+  bool isS1Pressed = sensor1Value > PRESS_THRESHOLD;
+  bool isS2Pressed = sensor2Value > PRESS_THRESHOLD;
+
+  // Calculate the pulsing brightness (0 to 255) safely
+  int pulseSpeed = 1500; 
+  int brightness = abs((long)(millis() % pulseSpeed) - (pulseSpeed / 2)) * 255 / (pulseSpeed / 2);
+
+  // Senario 1 both sesneors are true that means heart turns on
+  if (isS1Pressed && isS2Pressed) {
+    analogWrite(led1Pin, 0); // Forces PWM to 0 (OFF)
+    analogWrite(led2Pin, 0); // Forces PWM to 0 (OFF)
+    digitalWrite(led3Pin, HIGH); 
+  }
+  // Senario 2 one sesneor is true that means other seat is flashing
+  else if (isS1Pressed) {
+    analogWrite(led1Pin, 0); // Forces PWM to 0 (OFF)
+    analogWrite(led2Pin, brightness); 
+    digitalWrite(led3Pin, LOW);
+  }
+  // Senario 3 one sesneor is true that means other seat is flashing
+  else if (isS2Pressed) {
+    analogWrite(led1Pin, brightness); // Pulsing applied here
+    analogWrite(led2Pin, 0); // Forces PWM to 0 (OFF)
+    digitalWrite(led3Pin, LOW);
+  }
+  // Senario 4 which is defualt no pressure on both
+  else {
+    analogWrite(led1Pin, brightness); // Pulsing when idle
+    analogWrite(led2Pin, brightness); // Pulsing when idle
+    digitalWrite(led3Pin, LOW);
+  }
+// just to see if my sesnors are getting data and to adjust the Thershold
+  Serial.print("S1: ");
+  Serial.print(sensor1Value);
+  Serial.print(" | S2: ");
+  Serial.println(sensor2Value);
+  //so its not glitchy
+  delay(10);
+}
